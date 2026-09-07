@@ -1,4 +1,1 @@
-Enable-PSRemoting
-
-
-Get-Service WinRM
+test
