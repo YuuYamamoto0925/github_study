@@ -1,0 +1,4 @@
+Enable-PSRemoting
+
+
+Get-Service WinRM
