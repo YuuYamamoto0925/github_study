@@ -1,0 +1,61 @@
+.secret_detection_base:
+  # 標準ステージ構造宣言
+  stage: test
+
+  # ジョブをどのDockerコンテナ環境で処理させたいかの指定
+  image:
+    # 「Betterleaks」のバージョン1.8.1を取得し使用する。
+    name: 1.8.1
+    # scriptが正常処理できるようにデフォルト状態に合わせる。
+    entrypoint: [""]
+    # 最新があればローカル内のイメージを使用
+    pull_policy: [always, if-not-present]
+  # 機密情報検知時、パイプライン全体をエラー判定にする。
+  allow_failure: false
+  # コミット履歴全取得
+  variables:
+    GIT_DEPTH: 0
+  artifacts:
+    when: always
+    paths:
+      - gl-secret_detection_report.json
+    # 30日間GitLabに証跡ログファイルを保管する。
+    expire_in: 30 days
+
+# マージリクエスト時の処理(ブランチ先とブランチ元の差分での検知)
+secret_detection:Merge Request:
+  extends:
+    - .secret_detection_base
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - echo "=== [DEBUG] Merge Request ==="
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - echo "=== [DEBUG] CI_MERGE_REQUEST_SOURCE_BRANCH_NAME = [${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}] ==="
+    - echo "=== [DEBUG] CI_MERGE_REQUEST_TARGET_BRANCH_NAME = [${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}] ==="
+    - echo "=== [DEBUG] CI_COMMIT_BEFORE_SHA = [${CI_COMMIT_BEFORE_SHA}] ==="
+    - echo "=== [DEBUG] CI_COMMIT_SHA = [${CI_COMMIT_SHA}] ==="
+    - betterleaks git . --config=".betterleaks.toml" --log-opts="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME..HEAD" --report-format="json" --report-path="gl-secret_detection_report.json" --exit-code=1
+    
+# プッシュ時の処理
+secret_detection:Branch Push:
+  extends:
+    - .secret_detection_base
+  rules:
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS == null
+  script:
+    - |
+      if [ -n "$CI_COMMIT_BEFORE_SHA" ] && [ "$CI_COMMIT_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+        echo "=== [DEBUG] Branch Commit Push ==="
+        RANGE="${CI_COMMIT_BEFORE_SHA}..${CI_COMMIT_SHA}"
+      elif git rev-parse --verify "origin/${CI_DEFAULT_BRANCH}" >/dev/null 2>&1; then
+        echo "=== [DEBUG] New Branch Create to DEFAULT BRANCH ==="
+        RANGE="origin/${CI_DEFAULT_BRANCH}..HEAD"
+      else
+        echo "=== [DEBUG] New Branch Create none DEFAULT BRANCH ==="
+        RANGE=-1
+      fi
+    - echo "=== [DEBUG] CI_COMMIT_BEFORE_SHA = [${CI_COMMIT_BEFORE_SHA}] ==="
+    - echo "=== [DEBUG] CI_COMMIT_SHA = [${CI_COMMIT_SHA}] ==="
+    - echo "=== [DEBUG] TARGET RANGE = [${RANGE}] ==="
+    - betterleaks git . --config=".betterleaks.toml" --log-opts="$RANGE" --report-format="json" --report-path="gl-secret_detection_report.json" --exit-code=1
