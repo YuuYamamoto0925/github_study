@@ -1,0 +1,5 @@
+title = "betterleaks."
+
+# Betterleaks標準ルール
+[extend]
+useDefault = true

@@ -5,7 +5,7 @@
   # ジョブをどのDockerコンテナ環境で処理させたいかの指定
   image:
     # 「Betterleaks」のバージョン1.8.1を取得し使用する。
-    name: 1.8.1
+    name: ghcr.io/betterleaks/betterleaks@sha256:8b9d12db5e11ca798029da44923503de5d8cfff6992cffaaa6722fbeb9fc7797
     # scriptが正常処理できるようにデフォルト状態に合わせる。
     entrypoint: [""]
     # 最新があればローカル内のイメージを使用
