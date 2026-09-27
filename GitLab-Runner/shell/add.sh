@@ -9,7 +9,7 @@ LOG_FILE=""${LOG_DIR}/GitRunner_Token_REG_$(date '+%Y%m%d_%H%M%S').log""
 JSON_FILE=""${LOG_DIR}/GitRunner_Token_REG.json""
 
 SECRET_NAME=""test-tokens"" // AWS シークレットマネージャー名
-REGION=""ap-northeast-1""           // AWS 利用リージョン
+REGION=""ap-northeast-1""           // AWS ご利用リージョン
 DOMAIN_URL=""https://git.test.jp""  // 対象GitLabドメイン
 
 # 1.AWS Secrets Manager Get Key and vales
